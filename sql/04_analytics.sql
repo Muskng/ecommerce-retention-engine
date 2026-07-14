@@ -105,3 +105,49 @@ GO
 -- Test our newly created Cohort view in SSMS
 SELECT * FROM vw_CohortRetention
 ORDER BY CohortMonth, MonthIndex;
+
+
+-- ==========================================
+-- STEP 3: DYNAMIC CUSTOMER SEGMENTATION ENGINE
+-- ==========================================
+
+-- Create a Clean View for Customer Profiling in Power BI
+IF OBJECT_ID('vw_CustomerSegments', 'V') IS NOT NULL
+    DROP VIEW vw_CustomerSegments;
+GO
+
+CREATE VIEW vw_CustomerSegments AS
+WITH CustomerStats AS (
+    -- Step 1: Calculate lifetime metrics per customer
+    SELECT 
+        CustomerSK,
+        COUNT(DISTINCT OrderID) AS LifetimeOrders,
+        SUM(TotalRevenue) AS LifetimeSpend,
+        MAX(OrderDateKey) AS LastPurchaseDateKey
+    FROM FactRetailOrders
+    GROUP BY CustomerSK
+)
+-- Step 2: Categorize customers dynamically based on their lifetime order counts
+SELECT 
+    c.CustomerSK,
+    c.CustomerAlternateID,
+    c.CustomerCity,
+    c.CustomerState,
+    s.LifetimeOrders,
+    s.LifetimeSpend,
+    s.LifetimeSpend / s.LifetimeOrders AS AverageOrderValue,
+    CASE 
+        WHEN s.LifetimeOrders > 12 THEN 'VIP Power User'
+        WHEN s.LifetimeOrders BETWEEN 5 AND 12 THEN 'Active Repeat Shopper'
+        WHEN s.LifetimeOrders BETWEEN 2 AND 4 THEN 'Slipping Shopper'
+        ELSE 'One-Time Buyer'
+    END AS CustomerSegment
+FROM DimCustomers c
+JOIN CustomerStats s ON c.CustomerSK = s.CustomerSK;
+GO
+
+-- Test our Customer Segmentation view
+SELECT CustomerSegment, COUNT(*) AS TotalCustomers, SUM(LifetimeSpend) AS SegmentRevenue
+FROM vw_CustomerSegments
+GROUP BY CustomerSegment
+ORDER BY SegmentRevenue DESC;
