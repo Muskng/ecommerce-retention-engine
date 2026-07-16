@@ -3,54 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Commerce Retention Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Customer Analytics Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body class="bg-gray-900 text-white min-h-screen p-8">
-    <div class="max-w-4xl mx-auto">
-        <h1 class="text-3xl font-bold mb-2 text-indigo-400">E-Commerce Cohort Retention</h1>
-        <p class="text-gray-400 mb-8">Live cloud data fetched from Supabase PostgreSQL</p>
-        
-        <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
-            <canvas id="retentionChart" class="w-full h-96"></canvas>
+<body class="bg-gray-950 text-white min-h-screen flex flex-col justify-between">
+
+    <nav class="border-b border-gray-800 bg-gray-900/50 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-chart-line text-indigo-500 text-2xl"></i>
+                <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-teal-400">KeepMetrics</span>
+            </div>
+            <div class="flex gap-6">
+                <a href="/" class="text-indigo-400 font-medium">Home</a>
+                <a href="/dashboard" class="text-gray-400 hover:text-white transition">Dashboard</a>
+            </div>
         </div>
-    </div>
+    </nav>
 
-    <script>
-        // Fetch our live API data and render it on a bar chart!
-        fetch('/api/cohort-data')
-            .then(response => response.json())
-            .then(data => {
-                const ctx = document.getElementById('retentionChart').getContext('2d');
-                
-                // Format our data for Chart.js
-                const labels = data.map(row => {
-                    let date = new Date(row.cohort_month);
-                    return date.toLocaleString('default', { month: 'short', year: 'numeric' });
-                });
-                const rates = data.map(row => row.retention_rate);
+    <main class="max-w-5xl mx-auto px-6 py-16 flex-grow flex flex-col justify-center">
+        <div class="text-center max-w-3xl mx-auto">
+            <span class="px-3 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full text-xs font-semibold uppercase tracking-wider">
+                Enterprise Retention Insights
+            </span>
+            <h1 class="text-5xl font-extrabold tracking-tight mt-6 mb-6 leading-tight">
+                Understand Your Customers' <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-teal-400">Lifetime Loyalty</span>
+            </h1>
+            <p class="text-lg text-gray-400 mb-10 leading-relaxed">
+                Transform complex SQL transactional data into simple, digestible cohort analytics. Discover exactly when customers are coming back, and where they are dropping off.
+            </p>
+            
+            <div class="flex justify-center gap-4">
+                <a href="/dashboard" class="px-8 py-4 bg-gradient-to-r from-indigo-500 to-teal-500 hover:from-indigo-600 hover:to-teal-600 rounded-xl font-bold shadow-lg shadow-indigo-500/20 transition-all transform hover:-translate-y-0.5 flex items-center gap-2">
+                    <i class="fa-solid fa-gauge-high"></i> Go to Analytics Dashboard
+                </a>
+            </div>
+        </div>
 
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Retention Rate (%)',
-                            data: rates,
-                            backgroundColor: 'rgba(99, 102, 241, 0.6)',
-                            borderColor: 'rgba(99, 102, 241, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: { beginAtZero: true, max: 100 }
-                        }
-                    }
-                });
-            });
-    </script>
+        <div class="grid md:grid-cols-3 gap-6 mt-20">
+            <div class="bg-gray-900 border border-gray-800 p-6 rounded-2xl">
+                <div class="w-10 h-10 bg-indigo-500/10 text-indigo-400 flex items-center justify-center rounded-lg mb-4 text-lg">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-2">What is a Cohort?</h3>
+                <p class="text-sm text-gray-400 leading-relaxed">
+                    A group of customers who signed up for your store during the exact same month. It helps us track behavior patterns over time.
+                </p>
+            </div>
+
+            <div class="bg-gray-900 border border-gray-800 p-6 rounded-2xl">
+                <div class="w-10 h-10 bg-teal-500/10 text-teal-400 flex items-center justify-center rounded-lg mb-4 text-lg">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-2">What is Retention?</h3>
+                <p class="text-sm text-gray-400 leading-relaxed">
+                    The percentage of signed-up customers who returned to make another purchase in the following months. Higher is better!
+                </p>
+            </div>
+
+            <div class="bg-gray-900 border border-gray-800 p-6 rounded-2xl">
+                <div class="w-10 h-10 bg-emerald-500/10 text-emerald-400 flex items-center justify-center rounded-lg mb-4 text-lg">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-2">Simple Data Sync</h3>
+                <p class="text-sm text-gray-400 leading-relaxed">
+                    No code or complex setups required. The dashboard fetches calculations straight from our secure, cloud-hosted Supabase engine.
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="border-t border-gray-900 bg-gray-950 py-8 text-center text-sm text-gray-500">
+        &copy; 2026 KeepMetrics. All rights reserved. Powered by Flask & Supabase.
+    </footer>
+
 </body>
 </html>

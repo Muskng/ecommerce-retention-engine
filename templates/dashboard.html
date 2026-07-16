@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-950 text-white min-h-screen flex flex-col">
+
+    <nav class="border-b border-gray-800 bg-gray-900/50 backdrop-blur-md">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-chart-line text-indigo-500 text-2xl"></i>
+                <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-teal-400">KeepMetrics</span>
+            </div>
+            <div class="flex gap-6 text-sm">
+                <a href="/" class="text-gray-400 hover:text-white transition">Home</a>
+                <a href="/dashboard" class="text-indigo-400 font-medium">Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-6 py-10 flex-grow w-full">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10 pb-6 border-b border-gray-900">
+            <div>
+                <h1 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">Cohort Performance Dashboard</h1>
+                <p class="text-gray-400 text-sm mt-1">Easily analyze user behavior periods and retention metrics.</p>
+            </div>
+            <div class="flex items-center gap-2 bg-emerald-500/10 text-emerald-400 px-4 py-2 border border-emerald-500/20 rounded-xl text-xs font-semibold self-start md:self-auto">
+                <span class="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse"></span> Cloud Synced (Supabase)
+            </div>
+        </div>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+            <div class="bg-gray-900/60 border border-gray-800 p-6 rounded-2xl flex items-center justify-between">
+                <div>
+                    <span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Total Signed Customers</span>
+                    <h3 class="text-3xl font-black mt-2 text-indigo-400" id="kpi-customers">-</h3>
+                </div>
+                <div class="w-12 h-12 bg-indigo-500/10 text-indigo-400 rounded-xl flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-user-plus"></i>
+                </div>
+            </div>
+
+            <div class="bg-gray-900/60 border border-gray-800 p-6 rounded-2xl flex items-center justify-between">
+                <div>
+                    <span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Average Retention Rate</span>
+                    <h3 class="text-3xl font-black mt-2 text-teal-400" id="kpi-retention">-</h3>
+                </div>
+                <div class="w-12 h-12 bg-teal-500/10 text-teal-400 rounded-xl flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-percent"></i>
+                </div>
+            </div>
+
+            <div class="bg-gray-900/60 border border-gray-800 p-6 rounded-2xl flex items-center justify-between sm:col-span-2 lg:col-span-1">
+                <div>
+                    <span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Target Performance Status</span>
+                    <h3 class="text-2xl font-black mt-2 text-emerald-400">Excellent</h3>
+                </div>
+                <div class="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gray-900/30 border border-gray-800 p-6 rounded-2xl shadow-xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold text-gray-200">How many customers purchase again?</h3>
+                <span class="text-xs text-gray-500">Interactive: Hover to see details</span>
+            </div>
+            <div class="w-full" style="height: 400px;">
+                <canvas id="retentionChart"></canvas>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        Chart.register(ChartDataLabels);
+
+        fetch('/api/cohort-data')
+            .then(response => response.json())
+            .then(data => {
+                // Calculate KPIs dynamically!
+                const uniqueCustomers = [...new Set(data.map(item => item.total_customers))].reduce((a,b) => a+b, 0);
+                const avgRetention = (data.reduce((acc, row) => acc + parseFloat(row.retention_rate), 0) / data.length).toFixed(1);
+
+                document.getElementById('kpi-customers').innerText = uniqueCustomers;
+                document.getElementById('kpi-retention').innerText = avgRetention + '%';
+
+                const ctx = document.getElementById('retentionChart').getContext('2d');
+                
+                // Color Gradient
+                const barGradient = ctx.createLinearGradient(0, 0, 0, 400);
+                barGradient.addColorStop(0, 'rgba(99, 102, 241, 0.85)'); // Indigo
+                barGradient.addColorStop(1, 'rgba(45, 212, 191, 0.85)');  // Teal
+
+                const labels = data.map(row => {
+                    let date = new Date(row.cohort_month);
+                    let formattedDate = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+                    return [`Cohort: ${formattedDate}`, `Month ${row.period_number}`];
+                });
+
+                const rates = data.map(row => row.retention_rate);
+                const activeCustomers = data.map(row => row.active_customers);
+                const totalCustomers = data.map(row => row.total_customers);
+
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: rates,
+                            backgroundColor: barGradient,
+                            borderColor: 'rgba(99, 102, 241, 1)',
+                            borderWidth: 1.5,
+                            borderRadius: 8,
+                            barPercentage: 0.5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#111827',
+                                titleColor: '#9ca3af',
+                                bodyColor: '#f3f4f6',
+                                borderColor: '#374151',
+                                borderWidth: 1,
+                                padding: 12,
+                                displayColors: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        let idx = context.dataIndex;
+                                        return [
+                                            `Retention rate: ${context.raw}%`,
+                                            `Active returning customers: ${activeCustomers[idx]} out of ${totalCustomers[idx]}`
+                                        ];
+                                    }
+                                }
+                            },
+                            datalabels: {
+                                anchor: 'end',
+                                align: 'top',
+                                offset: 4,
+                                color: '#818cf8',
+                                font: { weight: 'bold', size: 12 },
+                                formatter: function(val) { return val + '%'; }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 110,
+                                grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                                ticks: {
+                                    color: '#9ca3af',
+                                    callback: function(v) { if(v <= 100) return v + '%'; }
+                                }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: '#9ca3af', font: { size: 11 } }
+                            }
+                        }
+                    }
+                });
+            });
+    </script>
+</body>
+</html>
