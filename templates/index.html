@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce Retention Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-2 text-indigo-400">E-Commerce Cohort Retention</h1>
+        <p class="text-gray-400 mb-8">Live cloud data fetched from Supabase PostgreSQL</p>
+        
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <canvas id="retentionChart" class="w-full h-96"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Fetch our live API data and render it on a bar chart!
+        fetch('/api/cohort-data')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('retentionChart').getContext('2d');
+                
+                // Format our data for Chart.js
+                const labels = data.map(row => {
+                    let date = new Date(row.cohort_month);
+                    return date.toLocaleString('default', { month: 'short', year: 'numeric' });
+                });
+                const rates = data.map(row => row.retention_rate);
+
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Retention Rate (%)',
+                            data: rates,
+                            backgroundColor: 'rgba(99, 102, 241, 0.6)',
+                            borderColor: 'rgba(99, 102, 241, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: { beginAtZero: true, max: 100 }
+                        }
+                    }
+                });
+            });
+    </script>
+</body>
+</html>
